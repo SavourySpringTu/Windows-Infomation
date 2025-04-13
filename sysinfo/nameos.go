@@ -1,40 +1,46 @@
 package sysinfo
 
 import (
-	"fmt"
 	"syscall"
 	"unsafe"
 )
 
-func GetNameOS() {
+var (
+	advapi32             = syscall.NewLazyDLL("advapi32.dll")
+	procRegOpenKeyExW    = advapi32.NewProc("RegOpenKeyExW")
+	procRegQueryValueExW = advapi32.NewProc("RegQueryValueExW")
+	procCloseKey         = advapi32.NewProc("RegCloseKey")
+)
+
+const (
+	HKEY_LOCAL_MACHINE = 0x80000002
+	KEY_READ           = 0x20019
+)
+
+func GetInfoOSbyName(name string) (string, error) {
 	path := `SOFTWARE\Microsoft\Windows NT\CurrentVersion`
 
 	var hKey syscall.Handle
 	subKey := syscall.StringToUTF16Ptr(path)
 
-	advapi32 = syscall.NewLazyDLL("advapi32.dll")
-	procRegOpenKeyExW = advapi32.NewProc("RegOpenKeyExW")
-	procRegQueryValueExW = advapi32.NewProc("RegQueryValueExW")
-	procCloseKey = advapi32.NewProc("RegCloseKey")
-
-	ret, _, _ := procRegOpenKeyExW.Call(
+	ret, _, err := procRegOpenKeyExW.Call(
 		uintptr(HKEY_LOCAL_MACHINE),
 		uintptr(unsafe.Pointer(subKey)),
 		0,
 		uintptr(KEY_READ),
 		uintptr(unsafe.Pointer(&hKey)),
 	)
-
+	defer procCloseKey.Call(uintptr(unsafe.Pointer(&hKey)))
 	if ret != 0 {
-		fmt.Println("RegQueryValueExW failed:", syscall.Errno(ret))
+		return "", err
 	}
 
-	valName := syscall.StringToUTF16Ptr("ProductName")
+	valName := syscall.StringToUTF16Ptr(name)
 	var valType uint32
 	var buf [256]uint16
 	var size uint32 = uint32(len(buf))
 
-	ret1, _, _ := procRegQueryValueExW.Call(
+	ret1, _, err1 := procRegQueryValueExW.Call(
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(valName)),
 		0,
@@ -44,9 +50,8 @@ func GetNameOS() {
 	)
 
 	if ret1 != 0 {
-		fmt.Println("RegQueryValueExW failed:", syscall.Errno(ret1))
+		return "", err1
 	}
 
-	value := syscall.UTF16ToString(buf[:size])
-	fmt.Println(value)
+	return syscall.UTF16ToString(buf[:size]), nil
 }

@@ -2,16 +2,17 @@ package sysinfo
 
 import (
 	"syscall"
-	"time"
 )
 
-func GetUptime() (time.Duration, error) {
-	kernel32 := syscall.NewLazyDLL("kernel32.dll")
-	procGetTickCount64 := kernel32.NewProc("GetTickCount64")
+var (
+	kernel32           = syscall.NewLazyDLL("kernel32.dll")
+	procGetTickCount64 = kernel32.NewProc("GetTickCount64")
+)
 
+func GetUptime() (int, error) {
 	ret, _, _ := procGetTickCount64.Call()
 
-	milliseconds := uint64(ret)
+	milliseconds := int(ret) / 1000 / 60
 
-	return time.Duration(milliseconds) * time.Millisecond, nil
+	return milliseconds, nil
 }

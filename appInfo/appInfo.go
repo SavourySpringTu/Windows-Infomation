@@ -1,4 +1,4 @@
-package sysinfo
+package appInfo
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"unsafe"
 )
 
-type info struct {
+type AppInfo struct {
 	Name        string
 	Version     string
 	Publisher   string
@@ -19,6 +19,7 @@ var (
 	procRegQueryValueExW = advapi32.NewProc("RegQueryValueExW")
 	procCloseKey         = advapi32.NewProc("RegCloseKey")
 	procRegEnumKeyExW    = advapi32.NewProc("RegEnumKeyExW")
+	path                 = `SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall`
 )
 
 const (
@@ -26,8 +27,8 @@ const (
 	KEY_READ           = 0x20019
 )
 
-func GetAppInfo() {
-	path := `SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall`
+func GetAllAppInfo() ([]AppInfo, error) {
+	var result []AppInfo
 	subKey := syscall.StringToUTF16Ptr(path)
 	var hKey syscall.Handle
 
@@ -58,16 +59,20 @@ func GetAppInfo() {
 			break
 		}
 		appKeyName := syscall.UTF16ToString(nameBuf[:nameLen])
-		abc(path + `\` + appKeyName)
-
+		app, _ := GetInfoApp(path + `\` + appKeyName)
+		if app.Name != "" {
+			result = append(result, app)
+		}
 		index++
 	}
+	return result, nil
 }
 
-func abc(subKey string) {
+func GetInfoApp(subKey string) (AppInfo, error) {
 	appKey := syscall.StringToUTF16Ptr(subKey)
 	var hKey syscall.Handle
-	ret, _, _ := procRegOpenKeyExW.Call(
+	var result AppInfo
+	ret, _, err := procRegOpenKeyExW.Call(
 		uintptr(HKEY_LOCAL_MACHINE),
 		uintptr(unsafe.Pointer(appKey)),
 		0,
@@ -76,27 +81,41 @@ func abc(subKey string) {
 	)
 	defer procCloseKey.Call(uintptr(hKey))
 	if ret != 0 {
-		fmt.Println("RegQueryValueExW failed:", syscall.Errno(ret))
+		return result, err
 	}
 
-	name := queryReg(hKey, "DisplayName")
-	version := queryReg(hKey, "DisplayVersion")
-	publisher := queryReg(hKey, "Publisher")
-	installdate := queryReg(hKey, "InstallDate")
+	name, _ := queryReg(hKey, "DisplayName")
+	version, _ := queryReg(hKey, "DisplayVersion")
+	publisher, _ := queryReg(hKey, "Publisher")
+	installdate, _ := queryReg(hKey, "InstallDate")
 
-	fmt.Printf("Name: %s\n", name)
-	fmt.Printf("Version: %s\n", version)
-	fmt.Printf("Publisher: %s\n", publisher)
-	fmt.Printf("Install Date: %s\n\n", installdate)
+	result = AppInfo{
+		Name:        name,
+		Version:     version,
+		Publisher:   publisher,
+		InstallDate: installdate,
+	}
+	return result, nil
 }
 
-func queryReg(hKey syscall.Handle, name string) string {
+func queryReg(hKey syscall.Handle, name string) (string, error) {
 	valName := syscall.StringToUTF16Ptr(name)
+	var size uint32
 	var valType uint32
-	var buf [256]uint16
-	var size uint32 = uint32(len(buf))
+	ret, _, err := procRegQueryValueExW.Call(
+		uintptr(hKey),
+		uintptr(unsafe.Pointer(valName)),
+		0,
+		uintptr(unsafe.Pointer(&valType)),
+		0,
+		uintptr(unsafe.Pointer(&size)),
+	)
+	if ret != 0 && ret != 234 {
+		return "", err
+	}
 
-	ret1, _, _ := procRegQueryValueExW.Call(
+	buf := make([]uint16, size/2)
+	ret, _, err = procRegQueryValueExW.Call(
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(valName)),
 		0,
@@ -104,12 +123,8 @@ func queryReg(hKey syscall.Handle, name string) string {
 		uintptr(unsafe.Pointer(&buf[0])),
 		uintptr(unsafe.Pointer(&size)),
 	)
-
-	if ret1 != 0 {
-		fmt.Println("RegQueryValueExW failed:", syscall.Errno(ret1))
-		return ""
+	if ret != 0 {
+		return "", err
 	}
-
-	value := syscall.UTF16ToString(buf[:size])
-	return value
+	return syscall.UTF16ToString(buf), nil
 }
