@@ -11,17 +11,23 @@ var (
 )
 
 func GetUsername() (string, error) {
-	var buf [256]uint16
-	size := uint32(len(buf))
+	var size uint32
 
 	ret, _, err := procGetUserName.Call(
-		uintptr(unsafe.Pointer(&buf[0])),
+		0,
 		uintptr(unsafe.Pointer(&size)),
 	)
-
-	if ret == 0 {
+	buf := make([]uint16, size/2)
+	if ret == 234 {
+		ret, _, err := procGetUserName.Call(
+			uintptr(unsafe.Pointer(&buf[0])),
+			uintptr(unsafe.Pointer(&size)),
+		)
+		if ret == 0 {
+			return "", err
+		}
+	} else {
 		return "", err
 	}
-
-	return syscall.UTF16ToString(buf[:size]), nil
+	return syscall.UTF16ToString(buf), nil
 }

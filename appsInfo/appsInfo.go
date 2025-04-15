@@ -1,4 +1,4 @@
-package appInfo
+package appsInfo
 
 import (
 	"fmt"

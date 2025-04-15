@@ -37,10 +37,19 @@ func GetInfoOSbyName(name string) (string, error) {
 
 	valName := syscall.StringToUTF16Ptr(name)
 	var valType uint32
-	var buf [256]uint16
-	var size uint32 = uint32(len(buf))
+	var size uint32
 
 	ret1, _, err1 := procRegQueryValueExW.Call(
+		uintptr(hKey),
+		uintptr(unsafe.Pointer(valName)),
+		0,
+		uintptr(unsafe.Pointer(&valType)),
+		0,
+		uintptr(unsafe.Pointer(&size)),
+	)
+
+	buf := make([]uint16, size/2)
+	ret1, _, err1 = procRegQueryValueExW.Call(
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(valName)),
 		0,
@@ -48,10 +57,8 @@ func GetInfoOSbyName(name string) (string, error) {
 		uintptr(unsafe.Pointer(&buf[0])),
 		uintptr(unsafe.Pointer(&size)),
 	)
-
 	if ret1 != 0 {
 		return "", err1
 	}
-
-	return syscall.UTF16ToString(buf[:size]), nil
+	return syscall.UTF16ToString(buf), nil
 }
