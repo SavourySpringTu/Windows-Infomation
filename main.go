@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	appsInfo "main/appsInfo"
+	filesinfo "main/filesInfo"
 	processesInfo "main/processesInfo"
 	sysInfo "main/sysInfo"
 )
@@ -12,7 +13,6 @@ var (
 	sysInfoFlag       = flag.Bool("sysinfo", false, "Get information of system")
 	appsInfoFlag      = flag.Bool("appsinfo", false, "Get information of all applications installed in the os")
 	processesInfoFlag = flag.Bool("p", false, "Get infomation of processes")
-	viewFlag          = flag.Bool("view", false, "Show GUI")
 )
 
 func main() {
@@ -49,11 +49,13 @@ func main() {
 			fmt.Println(errProcessInfo)
 		} else {
 			for _, item := range processInfo {
+				fmt.Println("====================================")
 				fmt.Println("Pid: ", item.Pid)
 				fmt.Println("Name: ", item.Name)
 				fmt.Println("Pid parent: ", item.PidParent)
+				fmt.Println("Comand Line: ", item.CommandLine)
 			}
 		}
-
 	}
+	filesinfo.ProcessPath(`C:\Tu\Windows-Infomation`)
 }
