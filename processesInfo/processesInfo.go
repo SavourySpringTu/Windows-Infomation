@@ -1,7 +1,6 @@
 package processesInfo
 
 import (
-	"fmt"
 	"main/global"
 	"syscall"
 	"unsafe"
@@ -29,20 +28,12 @@ type PROCESSENTRY32 struct {
 }
 
 var (
-	user32                       = syscall.NewLazyDLL("user32.dll")
 	kernel32                     = syscall.NewLazyDLL("Kernel32.dll")
 	procCreateToolhelp32Snapshot = kernel32.NewProc("CreateToolhelp32Snapshot")
 	procProcess32First           = kernel32.NewProc("Process32First")
 	procOpenProcess              = kernel32.NewProc("OpenProcess")
 	procProcess32Next            = kernel32.NewProc("Process32Next")
-	procReadProcessMemory        = kernel32.NewProc("ReadProcessMemory")
-	procEnumProcessModules       = kernel32.NewProc("EnumProcessModules")
-	procGetModuleBaseNameW       = kernel32.NewProc("GetModuleBaseNameW")
-	procGetCommandLineW          = kernel32.NewProc("GetCommandLineW")
-	procGetWindowThreadProcessId = user32.NewProc("GetWindowThreadProcessId")
-	procGetForegroundWindow      = user32.NewProc("GetForegroundWindow")
 	procCloseHandle              = kernel32.NewProc("CloseHandle")
-	maxPath                      = 260
 )
 
 func GetProcessesInfo() ([]ProcessInfo, error) {
@@ -58,12 +49,12 @@ func GetProcessesInfo() ([]ProcessInfo, error) {
 		return result, e
 	}
 	processEntry.dwSize = uint32(unsafe.Sizeof(processEntry))
-	ret, _, e := procProcess32First.Call(
+	ret, _, errFirst := procProcess32First.Call(
 		hProcessSnap,
 		uintptr(unsafe.Pointer(&processEntry)),
 	)
 	if ret == 0 {
-		return result, e
+		return result, errFirst
 	}
 	for {
 		hProcess, _, _ := procOpenProcess.Call(
@@ -72,96 +63,20 @@ func GetProcessesInfo() ([]ProcessInfo, error) {
 			uintptr(processEntry.th32ProcessID),
 		)
 		if hProcess != 0 {
-			hProcess1 := syscall.Handle(hProcess)
-			processComandLine, _ := GetProcessCommandLine(hProcess1, processEntry.th32ProcessID)
 			var processInfo = ProcessInfo{
-				Name:        string(processEntry.szExeFile[:]),
-				Pid:         processEntry.th32ProcessID,
-				PidParent:   processEntry.th32ParentProcessID,
-				CommandLine: processComandLine,
+				Name:      string(processEntry.szExeFile[:]),
+				Pid:       processEntry.th32ProcessID,
+				PidParent: processEntry.th32ParentProcessID,
 			}
 			result = append(result, processInfo)
 		}
-		ret, _, _ := procProcess32Next.Call(
-			uintptr(hProcessSnap),
+		retNext, _, _ := procProcess32Next.Call(
+			hProcessSnap,
 			uintptr(unsafe.Pointer(&processEntry)),
 		)
-		if ret == 0 {
+		if retNext == 0 {
 			break
 		}
 	}
 	return result, nil
-}
-
-func GetProcessCommandLine(hProcess syscall.Handle, pid uint32) (string, error) {
-	var pebBaseAddress uintptr
-	var read uint32
-	procReadProcessMemory.Call(
-		uintptr(hProcess),
-		0x7ffdf000,
-		uintptr(unsafe.Pointer(&pebBaseAddress)),
-		unsafe.Sizeof(pebBaseAddress),
-		uintptr(unsafe.Pointer(&read)),
-	)
-
-	var processParameters uintptr
-	procReadProcessMemory.Call(
-		uintptr(hProcess),
-		pebBaseAddress+0x10,
-		uintptr(unsafe.Pointer(&processParameters)),
-		unsafe.Sizeof(processParameters),
-		uintptr(unsafe.Pointer(&read)),
-	)
-
-	var commandLineBuffer [260]byte
-	procReadProcessMemory.Call(
-		uintptr(hProcess),
-		processParameters+0x60,
-		uintptr(unsafe.Pointer(&commandLineBuffer)),
-		260,
-		uintptr(unsafe.Pointer(&read)),
-	)
-
-	return string(commandLineBuffer[:]), nil
-}
-
-func GetProcessCommandLine1(pid uint32) string {
-	hProcess, _, _ := procOpenProcess.Call(
-		uintptr(global.PROCESS_VM_READ|global.PROCESS_QUERY_LIMITED_INFORMATION),
-		0,
-		uintptr(pid),
-	)
-	if hProcess == 0 {
-		return ""
-	}
-	defer procCloseHandle.Call(hProcess)
-	var pebBaseAddress uintptr
-	var read uint32
-	ret, _, _ := procReadProcessMemory.Call(
-		uintptr(hProcess),
-		0x7ffdf000,
-		uintptr(unsafe.Pointer(&pebBaseAddress)),
-		unsafe.Sizeof(pebBaseAddress),
-		uintptr(unsafe.Pointer(&read)),
-	)
-	fmt.Println("ret", ret)
-	var processParameters uintptr
-	ret1, _, _ := procReadProcessMemory.Call(
-		uintptr(hProcess),
-		pebBaseAddress+0x10,
-		uintptr(unsafe.Pointer(&processParameters)),
-		unsafe.Sizeof(processParameters),
-		uintptr(unsafe.Pointer(&read)),
-	)
-	fmt.Println("ret1", ret1)
-	var commandLineBuffer [260]byte
-	ret2, _, _ := procReadProcessMemory.Call(
-		uintptr(hProcess),
-		processParameters+0x60,
-		uintptr(unsafe.Pointer(&commandLineBuffer)),
-		260,
-		uintptr(unsafe.Pointer(&read)),
-	)
-	fmt.Println("ret2", ret2)
-	return string(commandLineBuffer[:])
 }

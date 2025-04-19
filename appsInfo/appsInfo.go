@@ -29,7 +29,7 @@ const (
 
 func GetAllAppInfo() ([]AppInfo, error) {
 	var result []AppInfo
-	subKey := syscall.StringToUTF16Ptr(path)
+	subKey, _ := syscall.UTF16PtrFromString(path)
 	var hKey syscall.Handle
 
 	ret, _, _ := procRegOpenKeyExW.Call(
@@ -69,7 +69,7 @@ func GetAllAppInfo() ([]AppInfo, error) {
 }
 
 func GetInfoApp(subKey string) (AppInfo, error) {
-	appKey := syscall.StringToUTF16Ptr(subKey)
+	appKey, _ := syscall.UTF16PtrFromString(subKey)
 	var hKey syscall.Handle
 	var result AppInfo
 	ret, _, err := procRegOpenKeyExW.Call(
@@ -84,10 +84,10 @@ func GetInfoApp(subKey string) (AppInfo, error) {
 		return result, err
 	}
 
-	name, _ := queryReg(hKey, "DisplayName")
-	version, _ := queryReg(hKey, "DisplayVersion")
-	publisher, _ := queryReg(hKey, "Publisher")
-	installdate, _ := queryReg(hKey, "InstallDate")
+	name, _ := QueryReg(hKey, "DisplayName")
+	version, _ := QueryReg(hKey, "DisplayVersion")
+	publisher, _ := QueryReg(hKey, "Publisher")
+	installdate, _ := QueryReg(hKey, "InstallDate")
 
 	result = AppInfo{
 		Name:        name,
@@ -98,8 +98,8 @@ func GetInfoApp(subKey string) (AppInfo, error) {
 	return result, nil
 }
 
-func queryReg(hKey syscall.Handle, name string) (string, error) {
-	valName := syscall.StringToUTF16Ptr(name)
+func QueryReg(hKey syscall.Handle, name string) (string, error) {
+	valName, _ := syscall.UTF16PtrFromString(name)
 	var size uint32
 	var valType uint32
 	ret, _, err := procRegQueryValueExW.Call(
