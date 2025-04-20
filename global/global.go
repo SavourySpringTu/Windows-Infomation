@@ -14,8 +14,11 @@ var (
 	KEY_READ = 0x20019
 
 	//================= ERROR =========================
-	ERROR_MORE_DATA = uintptr(234)
+	ERROR_MORE_DATA uintptr = 234
 
 	//================= REGISTRY ======================
 	HKEY_LOCAL_MACHINE = 0x80000002
+
+	//================ FILE FOLDER ====================
+	FILE_ATTRIBUTE_ARCHIVE uint32 = 0x20
 )

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"main/appsInfo"
+	"main/filesInfo"
 	"main/processesInfo"
 	"main/sysInfo"
 )
@@ -12,6 +13,7 @@ var (
 	sysInfoFlag       = flag.Bool("s", false, "Get information of system")
 	appsInfoFlag      = flag.Bool("a", false, "Get information of all applications installed in the os")
 	processesInfoFlag = flag.Bool("p", false, "Get infomation of processes")
+	fileInfoFlag      = flag.Bool("f", false, "Get information of files")
 )
 
 func main() {
@@ -53,6 +55,20 @@ func main() {
 				fmt.Println("Pid       : ", item.Pid)
 				fmt.Println("Name      : ", item.Name)
 				fmt.Println("Pid parent: ", item.PidParent)
+			}
+		}
+	}
+	if *fileInfoFlag {
+		filesInfo, errFilesInfo := filesInfo.GetInfoFilesAndFolder(`C:\Tu\Windows-Infomation\`)
+		if errFilesInfo != nil {
+			fmt.Println(errFilesInfo)
+		} else {
+			for _, item := range filesInfo {
+				fmt.Println("=====================================")
+				fmt.Println("Name          : ", item.Name)
+				fmt.Println("Date created  : ", item.DateCreated)
+				fmt.Println("Date modified : ", item.DateModified)
+				fmt.Println("Size          : ", item.Size, " bytes")
 			}
 		}
 	}
