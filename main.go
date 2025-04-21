@@ -55,6 +55,8 @@ func main() {
 				fmt.Println("Pid       : ", item.Pid)
 				fmt.Println("Name      : ", item.Name)
 				fmt.Println("Pid parent: ", item.PidParent)
+				fmt.Println("SID       : ", item.Token.SID)
+				fmt.Println("Session Id: ", item.Token.SessionId)
 			}
 		}
 	}
