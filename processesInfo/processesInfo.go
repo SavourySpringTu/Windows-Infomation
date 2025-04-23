@@ -2,8 +2,9 @@ package processesInfo
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"main/global"
+	"strconv"
 	"syscall"
 	"unsafe"
 )
@@ -18,12 +19,17 @@ type ProcessInfo struct {
 	Token       TokenInfo
 }
 type TokenInfo struct {
-	SID       string
-	SessionId uint32
-	Group     []Group
+	SID          string
+	SessionId    uint32
+	LogonSession string
+	Groups       []GroupInfo
+	Privileges   []PrivilegeInfo
 }
-type Group struct {
+type GroupInfo struct {
 	SID string
+}
+type PrivilegeInfo struct {
+	Name string
 }
 type PROCESSENTRY32 struct {
 	dwSize              uint32
@@ -48,6 +54,22 @@ type SID_AND_ATTRIBUTES struct {
 	SID        *syscall.SID
 	Attributes uint32
 }
+type LUID struct {
+	LowPart  uint32
+	HighPart uint32
+}
+type TOKEN_PRIVILEGES struct {
+	PrivilegeCount uint32
+	Privileges     uintptr
+}
+type LUID_AND_ATTRIBUTES struct {
+	Luid       LUID
+	Attributes uint32
+}
+type TOKEN_STATISTICS struct {
+	TokenId          LUID
+	AuthenticationId LUID
+}
 
 var (
 	advapi32                     = syscall.NewLazyDLL("advapi32.dll")
@@ -58,6 +80,7 @@ var (
 	procProcess32Next            = kernel32.NewProc("Process32Next")
 	procOpenProcessToken         = advapi32.NewProc("OpenProcessToken")
 	procGetTokenInformation      = advapi32.NewProc("GetTokenInformation")
+	procLookupPrivilegeNameW     = advapi32.NewProc("LookupPrivilegeNameW")
 	procCloseHandle              = kernel32.NewProc("CloseHandle")
 )
 
@@ -118,9 +141,13 @@ func GetTokenProcess(hProcess syscall.Handle) (TokenInfo, error) {
 	sid, _ := GetSIDProcess(hToken)
 	sessionId, _ := GetSessionProcess(hToken)
 	group, _ := GetGroupProcess(hToken)
+	logon, _ := GetLogonSessionInfo(hToken)
+	pri, _ := GetPrivilegesProcess(hToken)
 	result.SID = sid
 	result.SessionId = sessionId
-	result.Group = group
+	result.LogonSession = logon
+	result.Groups = group
+	result.Privileges = pri
 	if ret == 0 {
 		return result, err
 	}
@@ -159,44 +186,133 @@ func GetSessionProcess(hToken syscall.Token) (uint32, error) {
 	return sessionId, nil
 }
 
-func GetGroupProcess(token syscall.Token) ([]Group, error) {
-	var result []Group
-	buf := make([]byte, 10)
-	var size = uint32(len(buf))
-	ret, _, err := procGetTokenInformation.Call(
-		uintptr(token),
-		uintptr(global.TokenGroups),
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(size),
-		uintptr(unsafe.Pointer(&size)),
-	)
-	if ret == 0 {
-		fmt.Println(err)
+func GetGroupProcess(token syscall.Token) ([]GroupInfo, error) {
+	var result []GroupInfo
+	var size = uint32(10)
+	var sizeRt uint32
+	var buf []byte
+
+	for {
+		buf = make([]byte, size)
+		ret, _, err := procGetTokenInformation.Call(
+			uintptr(token),
+			uintptr(global.TokenGroups),
+			uintptr(unsafe.Pointer(&buf[0])),
+			uintptr(size),
+			uintptr(unsafe.Pointer(&sizeRt)),
+		)
+		if ret == 1 {
+			break
+		}
+		if errors.Is(err, syscall.ERROR_INSUFFICIENT_BUFFER) == false {
+			return result, err
+		}
+		size = sizeRt
 	}
-	buf = make([]byte, size)
-	ret, _, err = procGetTokenInformation.Call(
-		uintptr(token),
-		uintptr(global.TokenGroups),
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(size),
-		uintptr(unsafe.Pointer(&size)),
-	)
+
 	tokenGroups := (*TOKEN_GROUPS)(unsafe.Pointer(&buf[0]))
-	fmt.Println("addrtokenGroups:", uintptr(unsafe.Pointer(tokenGroups)))
-	fmt.Println("sizeofCount:", unsafe.Sizeof(tokenGroups.GroupCount))
-	fmt.Println("tokenGroups.group:", tokenGroups.Groups)
-	groupCount := tokenGroups.GroupCount
-	groupsPtr := uintptr(unsafe.Pointer(&tokenGroups)) + unsafe.Sizeof(tokenGroups.GroupCount)
-	fmt.Println("groupsPtr:", groupsPtr)
+	n := int(tokenGroups.GroupCount)
+	for i := 0; i < n; i++ {
+		sidAttrAdd := tokenGroups.Groups + uintptr(i)*unsafe.Sizeof(SID_AND_ATTRIBUTES{})
+		sidAttr := (*SID_AND_ATTRIBUTES)(unsafe.Pointer(&sidAttrAdd))
+		sid, _ := sidAttr.SID.String()
+		if sid != "" {
+			group := GroupInfo{
+				SID: sid,
+			}
+			result = append(result, group)
+		}
+	}
+	return result, nil
+}
 
-	for i := 0; i < int(groupCount); i++ {
-		sidAttrAddr := groupsPtr + +uintptr(i)*(unsafe.Sizeof(SID_AND_ATTRIBUTES{}))
-		sidAttr := (*SID_AND_ATTRIBUTES)(unsafe.Pointer(sidAttrAddr))
-		sidAddr := sidAttr.SID
-		sid := (*syscall.SID)(unsafe.Pointer(&sidAddr))
-		strSid, _ := sid.String()
-		fmt.Println(strSid)
+func GetPrivilegesProcess(token syscall.Token) ([]PrivilegeInfo, error) {
+	var result []PrivilegeInfo
+	var size = uint32(10)
+	var sizeRt uint32
+	var buf []byte
+
+	for {
+		buf = make([]byte, size)
+		ret, _, err := procGetTokenInformation.Call(
+			uintptr(token),
+			uintptr(global.TokenPrivileges),
+			uintptr(unsafe.Pointer(&buf[0])),
+			uintptr(size),
+			uintptr(unsafe.Pointer(&sizeRt)),
+		)
+		if ret == 1 {
+			break
+		}
+		if errors.Is(err, syscall.ERROR_INSUFFICIENT_BUFFER) == false {
+			return result, err
+		}
+		size = sizeRt
 	}
 
+	tokenPri := (*TOKEN_PRIVILEGES)(unsafe.Pointer(&buf[0]))
+	n := int(tokenPri.PrivilegeCount)
+	for i := 0; i < n; i++ {
+		idAttrAdd := tokenPri.Privileges + uintptr(i)*unsafe.Sizeof(LUID_AND_ATTRIBUTES{})
+		idAttr := (*LUID_AND_ATTRIBUTES)(unsafe.Pointer(&idAttrAdd))
+		sid := idAttr.Luid.LowPart
+		if sid != 0 {
+			name, _ := GetNamePrivilege(idAttr.Luid)
+			if name == "" {
+				continue
+			}
+			privilege := PrivilegeInfo{
+				Name: name,
+			}
+			result = append(result, privilege)
+		}
+	}
 	return result, nil
+}
+
+func GetNamePrivilege(id LUID) (string, error) {
+	var buf []byte
+	size := uint32(4)
+	for {
+		buf = make([]byte, size)
+		ret, _, err := procLookupPrivilegeNameW.Call(
+			0,
+			uintptr(unsafe.Pointer(&id)),
+			uintptr(unsafe.Pointer(&buf[0])),
+			uintptr(unsafe.Pointer(&size)),
+		)
+		if ret == 1 {
+			return string(buf[:size]), err
+		}
+		if errors.Is(err, syscall.ERROR_INSUFFICIENT_BUFFER) == false {
+			return "", err
+		}
+		size = size * 2
+	}
+}
+
+func GetLogonSessionInfo(token syscall.Token) (string, error) {
+	var size = uint32(10)
+	var sizeRt uint32
+	var buf []byte
+	for {
+		buf = make([]byte, size)
+		ret, _, err := procGetTokenInformation.Call(
+			uintptr(token),
+			uintptr(global.TokenStatistics),
+			uintptr(unsafe.Pointer(&buf[0])),
+			uintptr(size),
+			uintptr(unsafe.Pointer(&sizeRt)),
+		)
+		if ret == 1 {
+			tokenOrigin := (*TOKEN_STATISTICS)(unsafe.Pointer(&buf[0]))
+			id := tokenOrigin.AuthenticationId
+			hex := strconv.FormatUint(uint64(id.LowPart), 16)
+			return hex, nil
+		}
+		if errors.Is(err, syscall.ERROR_INSUFFICIENT_BUFFER) == false {
+			return "", err
+		}
+		size = sizeRt
+	}
 }

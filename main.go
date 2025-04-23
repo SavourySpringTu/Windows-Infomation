@@ -52,11 +52,22 @@ func main() {
 		} else {
 			for _, item := range processInfo {
 				fmt.Println("==========================================================")
-				fmt.Println("Pid       : ", item.Pid)
-				fmt.Println("Name      : ", item.Name)
-				fmt.Println("Pid parent: ", item.PidParent)
-				fmt.Println("SID       : ", item.Token.SID)
-				fmt.Println("Session Id: ", item.Token.SessionId)
+				fmt.Println("Pid          : ", item.Pid)
+				fmt.Println("Name         : ", item.Name)
+				fmt.Println("Pid parent   : ", item.PidParent)
+				fmt.Println("SID          : ", item.Token.SID)
+				fmt.Println("Session Id   : ", item.Token.SessionId)
+				fmt.Println("Logon Session: ", item.Token.LogonSession)
+				fmt.Println("Groups: ")
+				for _, j := range item.Token.Groups {
+					fmt.Println("	Sid: ", j.SID)
+					fmt.Println("	------------------------------")
+				}
+				fmt.Println("Privileges: ")
+				for _, j := range item.Token.Privileges {
+					fmt.Println("	Name Privilege: ", j.Name)
+					fmt.Println("	------------------------------")
+				}
 			}
 		}
 	}
