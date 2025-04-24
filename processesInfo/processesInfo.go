@@ -48,7 +48,7 @@ type TOKEN_USER struct {
 }
 type TOKEN_GROUPS struct {
 	GroupCount uint32
-	Groups     uintptr
+	Groups     [1]SID_AND_ATTRIBUTES
 }
 type SID_AND_ATTRIBUTES struct {
 	SID        *syscall.SID
@@ -60,7 +60,7 @@ type LUID struct {
 }
 type TOKEN_PRIVILEGES struct {
 	PrivilegeCount uint32
-	Privileges     uintptr
+	Privileges     [1]LUID_AND_ATTRIBUTES
 }
 type LUID_AND_ATTRIBUTES struct {
 	Luid       LUID
@@ -69,6 +69,14 @@ type LUID_AND_ATTRIBUTES struct {
 type TOKEN_STATISTICS struct {
 	TokenId          LUID
 	AuthenticationId LUID
+}
+
+func (g *TOKEN_GROUPS) AllGroups() []SID_AND_ATTRIBUTES {
+	return (*[(1 << 28) - 1]SID_AND_ATTRIBUTES)(unsafe.Pointer(&g.Groups[0]))[:g.GroupCount:g.GroupCount]
+}
+
+func (p *TOKEN_PRIVILEGES) AllPrivileges() []LUID_AND_ATTRIBUTES {
+	return (*[(1 << 27) - 1]LUID_AND_ATTRIBUTES)(unsafe.Pointer(&p.Privileges[0]))[:p.PrivilegeCount:p.PrivilegeCount]
 }
 
 var (
@@ -124,6 +132,7 @@ func GetProcessesInfo() ([]ProcessInfo, error) {
 			hProcessSnap,
 			uintptr(unsafe.Pointer(&processEntry)),
 		)
+		procCloseHandle.Call(hProcess)
 		if retNext == 0 {
 			break
 		}
@@ -211,17 +220,12 @@ func GetGroupProcess(token syscall.Token) ([]GroupInfo, error) {
 	}
 
 	tokenGroups := (*TOKEN_GROUPS)(unsafe.Pointer(&buf[0]))
-	n := int(tokenGroups.GroupCount)
-	for i := 0; i < n; i++ {
-		sidAttrAdd := tokenGroups.Groups + uintptr(i)*unsafe.Sizeof(SID_AND_ATTRIBUTES{})
-		sidAttr := (*SID_AND_ATTRIBUTES)(unsafe.Pointer(&sidAttrAdd))
-		sid, _ := sidAttr.SID.String()
-		if sid != "" {
-			group := GroupInfo{
-				SID: sid,
-			}
-			result = append(result, group)
+	for _, i := range tokenGroups.AllGroups() {
+		sidStr, _ := i.SID.String()
+		group := GroupInfo{
+			SID: sidStr,
 		}
+		result = append(result, group)
 	}
 	return result, nil
 }
@@ -251,21 +255,12 @@ func GetPrivilegesProcess(token syscall.Token) ([]PrivilegeInfo, error) {
 	}
 
 	tokenPri := (*TOKEN_PRIVILEGES)(unsafe.Pointer(&buf[0]))
-	n := int(tokenPri.PrivilegeCount)
-	for i := 0; i < n; i++ {
-		idAttrAdd := tokenPri.Privileges + uintptr(i)*unsafe.Sizeof(LUID_AND_ATTRIBUTES{})
-		idAttr := (*LUID_AND_ATTRIBUTES)(unsafe.Pointer(&idAttrAdd))
-		sid := idAttr.Luid.LowPart
-		if sid != 0 {
-			name, _ := GetNamePrivilege(idAttr.Luid)
-			if name == "" {
-				continue
-			}
-			privilege := PrivilegeInfo{
-				Name: name,
-			}
-			result = append(result, privilege)
+	for _, i := range tokenPri.AllPrivileges() {
+		name, _ := GetNamePrivilege(i.Luid)
+		privilege := PrivilegeInfo{
+			Name: name,
 		}
+		result = append(result, privilege)
 	}
 	return result, nil
 }
@@ -287,7 +282,6 @@ func GetNamePrivilege(id LUID) (string, error) {
 		if errors.Is(err, syscall.ERROR_INSUFFICIENT_BUFFER) == false {
 			return "", err
 		}
-		size = size * 2
 	}
 }
 
