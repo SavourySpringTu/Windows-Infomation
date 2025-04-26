@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"main/appsInfo"
 	"main/filesInfo"
+	"main/kernelModuleInfo"
 	"main/processesInfo"
 	"main/sysInfo"
 )
@@ -14,6 +15,7 @@ var (
 	appsInfoFlag      = flag.Bool("a", false, "Get information of all applications installed in the os")
 	processesInfoFlag = flag.Bool("p", false, "Get infomation of processes")
 	fileInfoFlag      = flag.Bool("f", false, "Get information of files")
+	kernelModuleFlag  = flag.Bool("k", false, "Get information of kernel modules")
 )
 
 func main() {
@@ -84,5 +86,8 @@ func main() {
 				fmt.Println("Size          : ", item.Size, " bytes")
 			}
 		}
+	}
+	if *kernelModuleFlag {
+		kernelModuleInfo.GetKernelModuleInfo()
 	}
 }

@@ -1,9 +1,5 @@
 package global
 
-import (
-	"syscall"
-)
-
 const (
 	MAX_PATH                          = 260
 	READ_CONTROL                      = 0x00020000
@@ -13,13 +9,13 @@ const (
 	PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 	TH32CS_SNAPPROCESS                = 0x00000002
 	TOKEN_QUERY                       = 0x0008
-	KEY_READ                          = 0x20019
 )
 const (
 	ERROR_MORE_DATA uintptr = 234
 )
 const (
 	HKEY_LOCAL_MACHINE = 0x80000002
+	KEY_READ           = 0x20019
 )
 const (
 	FILE_ATTRIBUTE_ARCHIVE uint32 = 0x20
@@ -33,32 +29,6 @@ const (
 	TokenStatistics = 10
 	TokenSessionId  = 12
 )
-
-type SECURITY_LOGON_SESSION_DATA struct {
-	Size                  uint32
-	LogonId               LUID
-	UserName              LSA_UNICODE_STRING
-	LogonDomain           LSA_UNICODE_STRING
-	AuthenticationPackage LSA_UNICODE_STRING
-	LogonType             uint32
-	Session               uint32
-	Sid                   *syscall.SID
-	LogonTime             uint64
-	LogonServer           LSA_UNICODE_STRING
-	DnsDomainName         LSA_UNICODE_STRING
-	Upn                   LSA_UNICODE_STRING
-}
-
-type LSA_UNICODE_STRING struct {
-	Length        uint16
-	MaximumLength uint16
-	Buffer        *uint16
-}
-
-type LUID struct {
-	LowPart  uint32
-	HighPart int32
-}
 
 // Logon types
 const (
