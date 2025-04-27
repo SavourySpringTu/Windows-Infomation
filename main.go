@@ -88,6 +88,12 @@ func main() {
 		}
 	}
 	if *kernelModuleFlag {
-		kernelModuleInfo.GetKernelModuleInfo()
+		kernelModuleInfo, _ := kernelModuleInfo.GetKernelModuleInfo()
+		for _, item := range kernelModuleInfo {
+			fmt.Println("==========================================================")
+			fmt.Println("Name         : ", item.Name)
+			fmt.Println("Path         : ", item.Path)
+			fmt.Println("Status       : ", item.Status)
+		}
 	}
 }
