@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"main/appsInfo"
+	"main/connectionsInfo"
 	"main/filesInfo"
 	"main/kernelModuleInfo"
 	"main/processesInfo"
@@ -16,6 +17,7 @@ var (
 	processesInfoFlag = flag.Bool("p", false, "Get infomation of processes")
 	fileInfoFlag      = flag.Bool("f", false, "Get information of files")
 	kernelModuleFlag  = flag.Bool("k", false, "Get information of kernel modules")
+	connectionsFlag   = flag.Bool("c", false, "Get information of connections")
 )
 
 func main() {
@@ -95,5 +97,19 @@ func main() {
 			fmt.Println("Path         : ", item.Path)
 			fmt.Println("Status       : ", item.Status)
 		}
+	}
+	if *connectionsFlag {
+		connectionsInfo, _ := connectionsInfo.GetUdpInfo()
+		for i, j := range connectionsInfo {
+			fmt.Println("==========================================================")
+			fmt.Println("PID:", i)
+			for _, k := range j {
+				fmt.Println("	Handle        :", k.Handle)
+				fmt.Println("	Local Address :", k.LocalAddr)
+				fmt.Println("	Remote Address:", k.RemoteAddr)
+				fmt.Println("	------------------------------------------")
+			}
+		}
+
 	}
 }

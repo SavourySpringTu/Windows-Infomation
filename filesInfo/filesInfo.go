@@ -142,7 +142,7 @@ func GetTimeFile(fileAttributes WIN32_FIND_DATA) (FileInfo, error) {
 
 	result.DateModified = fmt.Sprintf("%02d:%02d %02d/%02d/%04d",
 		lastWriteTime.wHour,
-		lastWriteTime.wMinute,		lastWriteTime.wDay,
+		lastWriteTime.wMinute, lastWriteTime.wDay,
 		lastWriteTime.wMonth,
 		lastWriteTime.wYear,
 	)
