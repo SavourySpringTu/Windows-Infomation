@@ -10,6 +10,8 @@ const (
 	TOKEN_QUERY                       = 0x0008
 	PROCESS_DUP_HANDLE                = 0x00000040
 	DUPLICATE_SAME_ACCESS             = 0x00000002
+	SE_PRIVILEGE_ENABLED              = 0x00000002
+	TOKEN_ADJUST_PRIVILEGES           = 0x0020
 )
 const (
 	STATUS_SUCCESS                      = 0x00000000
@@ -17,6 +19,7 @@ const (
 	ERROR_MORE_DATA             uintptr = 234
 	ERROR_INSUFFICIENT_BUFFER           = 122
 	ERROR_NO_MORE_FILES                 = 18
+	ERROR_NOT_ALL_ASSIGNED              = 1300
 )
 const (
 	UDP_TABLE_OWNER_PID = 1
