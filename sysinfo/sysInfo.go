@@ -2,20 +2,37 @@ package sysInfo
 
 import (
 	"errors"
+	"fmt"
 	"main/global"
 	"syscall"
 	"unsafe"
 )
 
 var (
-	advapi32             = syscall.NewLazyDLL("advapi32.dll")
-	kernel32             = syscall.NewLazyDLL("kernel32.dll")
-	procGetUserName      = advapi32.NewProc("GetUserNameW")
-	procRegOpenKeyExW    = advapi32.NewProc("RegOpenKeyExW")
-	procRegQueryValueExW = advapi32.NewProc("RegQueryValueExW")
-	procGetTickCount64   = kernel32.NewProc("GetTickCount64")
-	procCloseKey         = advapi32.NewProc("RegCloseKey")
+	advapi32                   = syscall.NewLazyDLL("advapi32.dll")
+	kernel32                   = syscall.NewLazyDLL("kernel32.dll")
+	procGetUserName            = advapi32.NewProc("GetUserNameW")
+	procRegOpenKeyExW          = advapi32.NewProc("RegOpenKeyExW")
+	procRegQueryValueExW       = advapi32.NewProc("RegQueryValueExW")
+	procGetTickCount64         = kernel32.NewProc("GetTickCount64")
+	procGetSystemFirmwareTable = kernel32.NewProc("GetSystemFirmwareTable")
+	procCloseKey               = advapi32.NewProc("RegCloseKey")
 )
+
+type RawSMBIOSData struct {
+	Used20CallingMethod byte
+	SMBIOSMajorVersion  byte
+	SMBIOSMinorVersion  byte
+	DmiRevision         byte
+	Length              uint32
+	SMBIOSTableData     []byte
+}
+
+type HeaderSMBIOS struct {
+	Type   byte
+	Length byte
+	Handle uint16
+}
 
 func GetInfoOSbyName(name string) (string, error) {
 	path := `SOFTWARE\Microsoft\Windows NT\CurrentVersion`
@@ -92,4 +109,59 @@ func GetUptime() (int, error) {
 	ret, _, _ := procGetTickCount64.Call()
 	milliseconds := int(ret) / 1000 / 60
 	return milliseconds, nil
+}
+
+func GetFirmwareSystem() {
+	var size = byte(32)
+	var buf = make([]byte, size)
+	ret, _, _ := procGetSystemFirmwareTable.Call(
+		global.RSMB,
+		0,
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(size),
+	)
+	size = byte(ret)
+	buf = make([]byte, size)
+	ret, _, _ = procGetSystemFirmwareTable.Call(
+		global.RSMB,
+		0,
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(ret),
+	)
+	smDataTable := buf[8:size]
+	header := (*HeaderSMBIOS)(unsafe.Pointer(&smDataTable[0]))
+	length := header.Length
+
+	buffFormat := smDataTable[4:length]
+	buffString := smDataTable[length:]
+
+	manufacturerIndex := buffFormat[0]
+	manufacturer := getSMBiosStringByFormattedIndex(buffString, manufacturerIndex)
+	fmt.Println(manufacturer)
+}
+
+func getSMBiosStringByFormattedIndex(buffString []byte, index byte) string {
+	if index == 0 {
+		return ""
+	}
+
+	currentIndex := byte(1)
+	start := 0
+
+	for i := 0; i < len(buffString); i++ {
+		if buffString[i] == 0 {
+			if currentIndex == index {
+				return string(buffString[start:i])
+			}
+			currentIndex++
+			start = i + 1
+
+			// Nếu gặp \0\0 thì dừng
+			if i+1 < len(buffString) && buffString[i+1] == 0 {
+				break
+			}
+		}
+	}
+
+	return ""
 }

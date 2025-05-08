@@ -27,6 +27,7 @@ const (
 	KEY_READ            = 0x20019
 	AF_INET             = 2
 	AF_INET6            = 23
+	RSMB                = 0x52534D42
 )
 const (
 	FILE_ATTRIBUTE_ARCHIVE uint32 = 0x20

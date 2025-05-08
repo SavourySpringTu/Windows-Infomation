@@ -37,6 +37,8 @@ func main() {
 
 		timeup, _ := sysInfo.GetUptime()
 		fmt.Printf("Time up: %d minute\n", timeup)
+
+		sysInfo.GetFirmwareSystem()
 	}
 	if *appsInfoFlag {
 		appInfo, _ := appsInfo.GetAllAppInfo()
@@ -104,9 +106,8 @@ func main() {
 			fmt.Println("==========================================================")
 			fmt.Println("PID:", i)
 			for _, k := range j {
-				fmt.Println("	Handle        :", k.Handle)
-				fmt.Println("	Local Address :", k.LocalAddr)
-				fmt.Println("	Remote Address:", k.RemoteAddr)
+				fmt.Println("	Local Address :", k.LocalAddr, ":", k.LocalPort)
+				fmt.Println("	Remote Address:", k.RemoteAddr, ":", k.RemotePort)
 				fmt.Println("	------------------------------------------")
 			}
 		}

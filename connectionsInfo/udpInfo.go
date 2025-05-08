@@ -2,6 +2,7 @@ package connectionsInfo
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"main/global"
 	"net"
@@ -16,6 +17,7 @@ var (
 	kernel32 = syscall.NewLazyDLL("kernel32.dll")
 	advapi32 = syscall.NewLazyDLL("advapi32.dll")
 
+	procntohl                    = ws2_32.NewProc("ntohl")
 	procOpenProcessToken         = advapi32.NewProc("OpenProcessToken")
 	procLookupPrivilegeValueW    = advapi32.NewProc("LookupPrivilegeValueW")
 	procAdjustTokenPrivileges    = advapi32.NewProc("AdjustTokenPrivileges")
@@ -91,6 +93,8 @@ type UPDInfo struct {
 	Handle     uint16
 	RemoteAddr net.IP
 	LocalAddr  net.IP
+	LocalPort  uint16
+	RemotePort uint16
 }
 
 type Sockaddr struct {
@@ -113,30 +117,28 @@ func GetUdpInfo() (map[uint32][]UPDInfo, error) {
 	}
 
 	//========================================================
-	var result = make(map[uint32][]UPDInfo)
-	hCurrent, _, errCurrent := procGetCurrentProcess.Call()
-	if hCurrent == 0 {
-		return result, errCurrent
-	}
-	allHandle, errAllHandle := FilterHandle()
+	allHandle, result, errAllHandle := FilterHandle()
 	if errAllHandle != nil {
 		return result, errAllHandle
 	}
 
+	hCurrent, _, errCurrent := procGetCurrentProcess.Call()
+	if hCurrent == 0 {
+		return result, errCurrent
+	}
 	for _, handle := range allHandle {
 		dupHandle, errDup := DupicateHandle(handle.PID, syscall.Handle(handle.Handle), syscall.Handle(hCurrent))
-		if errDup != nil {
+		if errDup != nil || isSocket(dupHandle) != true {
 			continue
 		}
-		if isSocket(dupHandle) != true {
-			continue
-		}
-		localAddr, remoteAddr, _ := GetSocketAddresses(dupHandle)
+		localAddr, localPort, remoteAddr, remotePort, _ := GetSocketAddresses(dupHandle)
 		udpInfo := UPDInfo{
 			PID:        handle.PID,
 			Handle:     handle.Handle,
 			LocalAddr:  localAddr,
 			RemoteAddr: remoteAddr,
+			LocalPort:  localPort,
+			RemotePort: remotePort,
 		}
 		result[handle.PID] = append(result[handle.PID], udpInfo)
 	}
@@ -144,15 +146,15 @@ func GetUdpInfo() (map[uint32][]UPDInfo, error) {
 	return result, nil
 }
 
-func FilterHandle() ([]UPDInfo, error) {
+func FilterHandle() ([]UPDInfo, map[uint32][]UPDInfo, error) {
 	var result []UPDInfo
-	allHandle, errHandle := GetAllHandle()
-	if errHandle != nil {
-		return result, errHandle
-	}
 	allUdp, errUdp := GetAllUdp()
 	if errUdp != nil {
-		return result, errUdp
+		return result, allUdp, errUdp
+	}
+	allHandle, errHandle := GetAllHandle()
+	if errHandle != nil {
+		return result, allUdp, errHandle
 	}
 	for _, handle := range allHandle {
 		_, exists := allUdp[handle.ProcessId]
@@ -164,7 +166,7 @@ func FilterHandle() ([]UPDInfo, error) {
 			result = append(result, udpInfo)
 		}
 	}
-	return result, nil
+	return result, allUdp, nil
 }
 
 func (g *SYSTEM_HANDLE_INFORMATION) AllHandle() []SYSTEM_HANDLE {
@@ -202,8 +204,8 @@ func (g *MIB_UDPTABLE_OWNER_PID) AllUdp() []MIB_UDPROW_OWNER_PID {
 	return (*[(1 << 28) - 1]MIB_UDPROW_OWNER_PID)(unsafe.Pointer(&g.UdpRow[0]))[:g.dwNumEntries:g.dwNumEntries]
 }
 
-func GetAllUdp() (map[uint32]struct{}, error) {
-	var result = make(map[uint32]struct{})
+func GetAllUdp() (map[uint32][]UPDInfo, error) {
+	var result = make(map[uint32][]UPDInfo)
 	var size = uint32(32)
 	var buf = make([]byte, size)
 	for {
@@ -225,7 +227,13 @@ func GetAllUdp() (map[uint32]struct{}, error) {
 	}
 	ptr := (*MIB_UDPTABLE_OWNER_PID)(unsafe.Pointer(&buf[0]))
 	for _, j := range ptr.AllUdp() {
-		result[j.dwOwningPid] = struct{}{}
+		localPort, _, _ := procntohl.Call(uintptr(j.dwLocalPort))
+		udpInfo := UPDInfo{
+			PID:       j.dwOwningPid,
+			LocalAddr: uint32ToIP(j.dwLocalAddr),
+			LocalPort: uint16(localPort),
+		}
+		result[j.dwOwningPid] = append(result[j.dwOwningPid], udpInfo)
 	}
 	return result, nil
 }
@@ -256,49 +264,66 @@ func DupicateHandle(pid uint32, handle syscall.Handle, hCurrent syscall.Handle) 
 	return dupHandle, nil
 }
 
-func GetSocketAddresses(sock syscall.Handle) (localAddr, remoteAddr net.IP, err error) {
+func GetSocketAddresses(sock syscall.Handle) (localIP net.IP, localPort uint16, remoteIP net.IP, remotePort uint16, err error) {
 	defer procCloseHandle.Call(uintptr(sock))
 
-	var local Sockaddr
-	var localSize = int32(unsafe.Sizeof(local))
+	var localRaw [128]byte
+	localLen := int32(len(localRaw))
 
 	ret, _, _ := procGetSockName.Call(
 		uintptr(sock),
-		uintptr(unsafe.Pointer(&local)),
-		uintptr(unsafe.Pointer(&localSize)),
+		uintptr(unsafe.Pointer(&localRaw[0])),
+		uintptr(unsafe.Pointer(&localLen)),
 	)
-	if ret == 0 {
-		localAddr = net.IPv4(
-			local.Address.Addr[0],
-			local.Address.Addr[1],
-			local.Address.Addr[2],
-			local.Address.Addr[3],
-		)
-	} else {
-		errCode, _, _ := procWSAGetLastErr.Call()
-		localAddr = nil
-		err = syscall.Errno(errCode)
+
+	if ret != 0 {
+		err = errors.New("GetSockName error!")
+		fmt.Println(err)
+		return
 	}
 
-	var remote Sockaddr
-	var remoteSize = int32(unsafe.Sizeof(remote))
+	saFamily := *(*uint16)(unsafe.Pointer(&localRaw[0]))
+
+	switch saFamily {
+	case syscall.AF_INET:
+		sa := (*syscall.RawSockaddrInet4)(unsafe.Pointer(&localRaw[0]))
+		ret, _, _ = procntohl.Call(uintptr(sa.Port))
+		localPort = uint16(ret)
+
+	case syscall.AF_INET6:
+		sa := (*syscall.RawSockaddrInet6)(unsafe.Pointer(&localRaw[0]))
+		ret, _, _ = procntohl.Call(uintptr(sa.Port))
+		remotePort = uint16(ret)
+	}
+
+	var remoteRaw [128]byte
+	remoteLen := int32(len(remoteRaw))
 
 	ret, _, _ = procGetpeername.Call(
 		uintptr(sock),
-		uintptr(unsafe.Pointer(&remote)),
-		uintptr(unsafe.Pointer(&remoteSize)),
+		uintptr(unsafe.Pointer(&remoteRaw[0])),
+		uintptr(unsafe.Pointer(&remoteLen)),
 	)
-	if ret == 0 {
-		remoteAddr = net.IPv4(
-			remote.Address.Addr[0],
-			remote.Address.Addr[1],
-			remote.Address.Addr[2],
-			remote.Address.Addr[3],
-		)
-	} else {
-		remoteAddr = nil
+
+	if ret != 0 {
+		return
 	}
-	return localAddr, remoteAddr, err
+
+	saFamily = *(*uint16)(unsafe.Pointer(&remoteRaw[0]))
+
+	switch saFamily {
+	case syscall.AF_INET:
+		sa := (*syscall.RawSockaddrInet4)(unsafe.Pointer(&remoteRaw[0]))
+		ret, _, _ = procntohl.Call(uintptr(sa.Port))
+		localPort = uint16(ret)
+
+	case syscall.AF_INET6:
+		sa := (*syscall.RawSockaddrInet6)(unsafe.Pointer(&remoteRaw[0]))
+		ret, _, _ = procntohl.Call(uintptr(sa.Port))
+		remotePort = uint16(ret)
+	}
+
+	return
 }
 
 func isSocket(handle syscall.Handle) bool {
@@ -326,8 +351,7 @@ func isSocket(handle syscall.Handle) bool {
 	if objectInfo.Name.Length == 0 {
 		return false
 	}
-	slice := (*[1 << 20]uint16)(unsafe.Pointer(objectInfo.Name.Buffer))[:objectInfo.Name.Length:objectInfo.Name.Length]
-	name := syscall.UTF16ToString(slice[:])
+	name := UnicodeStringToString(objectInfo.Name)
 	if name == `\Device\Afd` || name == `\Device\Udp` {
 		return true
 	}
