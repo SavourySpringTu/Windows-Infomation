@@ -112,7 +112,7 @@ func GetUptime() (int, error) {
 }
 
 func GetFirmwareSystem() {
-	var size = byte(32)
+	var size = uint32(32)
 	var buf = make([]byte, size)
 	ret, _, _ := procGetSystemFirmwareTable.Call(
 		global.RSMB,
@@ -120,24 +120,52 @@ func GetFirmwareSystem() {
 		uintptr(unsafe.Pointer(&buf[0])),
 		uintptr(size),
 	)
-	size = byte(ret)
+	size = uint32(ret)
 	buf = make([]byte, size)
 	ret, _, _ = procGetSystemFirmwareTable.Call(
 		global.RSMB,
 		0,
 		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(ret),
+		uintptr(size),
 	)
 	smDataTable := buf[8:size]
+
 	header := (*HeaderSMBIOS)(unsafe.Pointer(&smDataTable[0]))
 	length := header.Length
-
 	buffFormat := smDataTable[4:length]
 	buffString := smDataTable[length:]
 
 	manufacturerIndex := buffFormat[0]
 	manufacturer := getSMBiosStringByFormattedIndex(buffString, manufacturerIndex)
 	fmt.Println(manufacturer)
+
+	nextTable, _ := GetTableByType(buffString, 1)
+	header = (*HeaderSMBIOS)(unsafe.Pointer(&nextTable[0]))
+	length = header.Length
+	buffFormat = nextTable[4:length]
+	buffString = nextTable[length:]
+
+	for i := 0; i < 1000; i++ {
+		fmt.Print(string(nextTable[i]))
+	}
+
+	manufacturerIndex = buffFormat[4]
+	fmt.Println(manufacturerIndex)
+	uuid := getSMBiosStringByFormattedIndex(buffString, manufacturerIndex)
+	fmt.Println(uuid)
+}
+
+func GetTableByType(buf []byte, typeTable int) ([]byte, error) {
+	for i := 0; i < len(buf)-1; i++ {
+		if buf[i] == 0x00 && buf[i+1] == 0x00 {
+			tableNext := buf[i+2:]
+			header := (*HeaderSMBIOS)(unsafe.Pointer(&tableNext[0]))
+			if int(header.Type) == typeTable {
+				return tableNext, nil
+			}
+		}
+	}
+	return nil, errors.New("Can't find")
 }
 
 func getSMBiosStringByFormattedIndex(buffString []byte, index byte) string {
@@ -156,12 +184,48 @@ func getSMBiosStringByFormattedIndex(buffString []byte, index byte) string {
 			currentIndex++
 			start = i + 1
 
-			// Nếu gặp \0\0 thì dừng
 			if i+1 < len(buffString) && buffString[i+1] == 0 {
 				break
 			}
 		}
 	}
-
 	return ""
+}
+func getSMBiosStringByFormattedIndex1(buffString []byte, index byte) string {
+	if index == 0 {
+		return ""
+	}
+
+	currentIndex := byte(1)
+	start := 0
+
+	for i := 0; i < len(buffString); i++ {
+		if buffString[i] == 0 {
+			if currentIndex == index {
+				uuidRaw := string(buffString[start:i])
+				uuid := fmt.Sprintf("%08x-%04x-%04x-%02x%02x-%012x",
+					reverseUint32([]byte(uuidRaw[0:4])),
+					reverseUint16([]byte(uuidRaw[4:6])),
+					reverseUint16([]byte(uuidRaw[6:8])),
+					uuidRaw[8], uuidRaw[9],
+					uuidRaw[10:16],
+				)
+				return uuid
+			}
+			currentIndex++
+			start = i + 1
+
+			if i+1 < len(buffString) && buffString[i+1] == 0 {
+				break
+			}
+		}
+	}
+	return ""
+}
+func reverseUint32(b []byte) uint32 {
+	return uint32(b[3])<<24 | uint32(b[2])<<16 | uint32(b[1])<<8 | uint32(b[0])
+}
+
+func reverseUint16(b []byte) uint16 {
+	return uint16(b[1])<<8 | uint16(b[0])
 }
