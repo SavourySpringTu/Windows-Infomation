@@ -130,39 +130,24 @@ func GetFirmwareSystem() {
 	)
 	smDataTable := buf[8:size]
 
-	header := (*HeaderSMBIOS)(unsafe.Pointer(&smDataTable[0]))
-	length := header.Length
-	buffFormat := smDataTable[4:length]
-	buffString := smDataTable[length:]
-
-	manufacturerIndex := buffFormat[0]
-	manufacturer := getSMBiosStringByFormattedIndex(buffString, manufacturerIndex)
-	fmt.Println(manufacturer)
-
-	nextTable, _ := GetTableByType(buffString, 1)
-	header = (*HeaderSMBIOS)(unsafe.Pointer(&nextTable[0]))
-	length = header.Length
-	buffFormat = nextTable[4:length]
-	buffString = nextTable[length:]
-
-	for i := 0; i < 1000; i++ {
-		fmt.Print(string(nextTable[i]))
-	}
-
-	manufacturerIndex = buffFormat[4]
-	fmt.Println(manufacturerIndex)
-	uuid := getSMBiosStringByFormattedIndex(buffString, manufacturerIndex)
-	fmt.Println(uuid)
+	table, _ := GetTableByType(smDataTable, 1)
+	header := (*HeaderSMBIOS)(unsafe.Pointer(&table[0]))
+	fmt.Println(header.Length)
+	fmt.Println(header.Type)
 }
 
 func GetTableByType(buf []byte, typeTable int) ([]byte, error) {
+	start := 0
 	for i := 0; i < len(buf)-1; i++ {
+		fmt.Println(i)
 		if buf[i] == 0x00 && buf[i+1] == 0x00 {
-			tableNext := buf[i+2:]
-			header := (*HeaderSMBIOS)(unsafe.Pointer(&tableNext[0]))
+			fmt.Println("i: ", i)
+			table := buf[start:]
+			header := (*HeaderSMBIOS)(unsafe.Pointer(&table[0]))
 			if int(header.Type) == typeTable {
-				return tableNext, nil
+				return table, nil
 			}
+			start = i + 2
 		}
 	}
 	return nil, errors.New("Can't find")
@@ -190,42 +175,4 @@ func getSMBiosStringByFormattedIndex(buffString []byte, index byte) string {
 		}
 	}
 	return ""
-}
-func getSMBiosStringByFormattedIndex1(buffString []byte, index byte) string {
-	if index == 0 {
-		return ""
-	}
-
-	currentIndex := byte(1)
-	start := 0
-
-	for i := 0; i < len(buffString); i++ {
-		if buffString[i] == 0 {
-			if currentIndex == index {
-				uuidRaw := string(buffString[start:i])
-				uuid := fmt.Sprintf("%08x-%04x-%04x-%02x%02x-%012x",
-					reverseUint32([]byte(uuidRaw[0:4])),
-					reverseUint16([]byte(uuidRaw[4:6])),
-					reverseUint16([]byte(uuidRaw[6:8])),
-					uuidRaw[8], uuidRaw[9],
-					uuidRaw[10:16],
-				)
-				return uuid
-			}
-			currentIndex++
-			start = i + 1
-
-			if i+1 < len(buffString) && buffString[i+1] == 0 {
-				break
-			}
-		}
-	}
-	return ""
-}
-func reverseUint32(b []byte) uint32 {
-	return uint32(b[3])<<24 | uint32(b[2])<<16 | uint32(b[1])<<8 | uint32(b[0])
-}
-
-func reverseUint16(b []byte) uint16 {
-	return uint16(b[1])<<8 | uint16(b[0])
 }

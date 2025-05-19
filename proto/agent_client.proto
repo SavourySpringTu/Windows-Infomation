@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "./;agent_client";
+
+service MessageCommandService{
+  rpc StreamMessageCommand(stream MessageCommand) returns(stream MessageCommand);
+}
+
+message MessageCommand {
+  string id=1;
+  string type=2;
+  string cmd=3;
+  string data=4;
+}
