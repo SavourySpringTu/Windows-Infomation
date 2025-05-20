@@ -23,10 +23,11 @@ const (
 
 type MessageCommand struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Cmd           string                 `protobuf:"bytes,3,opt,name=cmd,proto3" json:"cmd,omitempty"`
-	Data          string                 `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
+	Auth          string                 `protobuf:"bytes,1,opt,name=Auth,proto3" json:"Auth,omitempty"`
+	Id            string                 `protobuf:"bytes,2,opt,name=Id,proto3" json:"Id,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=Type,proto3" json:"Type,omitempty"`
+	Param         string                 `protobuf:"bytes,4,opt,name=Param,proto3" json:"Param,omitempty"`
+	Data          string                 `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -61,6 +62,13 @@ func (*MessageCommand) Descriptor() ([]byte, []int) {
 	return file_agent_client_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *MessageCommand) GetAuth() string {
+	if x != nil {
+		return x.Auth
+	}
+	return ""
+}
+
 func (x *MessageCommand) GetId() string {
 	if x != nil {
 		return x.Id
@@ -75,9 +83,9 @@ func (x *MessageCommand) GetType() string {
 	return ""
 }
 
-func (x *MessageCommand) GetCmd() string {
+func (x *MessageCommand) GetParam() string {
 	if x != nil {
-		return x.Cmd
+		return x.Param
 	}
 	return ""
 }
@@ -93,14 +101,15 @@ var File_agent_client_proto protoreflect.FileDescriptor
 
 const file_agent_client_proto_rawDesc = "" +
 	"\n" +
-	"\x12agent_client.proto\x12\x05proto\"Z\n" +
-	"\x0eMessageCommand\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04type\x18\x02 \x01(\tR\x04type\x12\x10\n" +
-	"\x03cmd\x18\x03 \x01(\tR\x03cmd\x12\x12\n" +
-	"\x04data\x18\x04 \x01(\tR\x04data2a\n" +
-	"\x15MessageCommandService\x12H\n" +
-	"\x14StreamMessageCommand\x12\x15.proto.MessageCommand\x1a\x15.proto.MessageCommand(\x010\x01B\x11Z\x0f./;agent_clientb\x06proto3"
+	"\x12agent_client.proto\x12\x05proto\"r\n" +
+	"\x0eMessageCommand\x12\x12\n" +
+	"\x04Auth\x18\x01 \x01(\tR\x04Auth\x12\x0e\n" +
+	"\x02Id\x18\x02 \x01(\tR\x02Id\x12\x12\n" +
+	"\x04Type\x18\x03 \x01(\tR\x04Type\x12\x14\n" +
+	"\x05Param\x18\x04 \x01(\tR\x05Param\x12\x12\n" +
+	"\x04Data\x18\x05 \x01(\tR\x04Data2W\n" +
+	"\x12AgentClientService\x12A\n" +
+	"\rStreamMessage\x12\x15.proto.MessageCommand\x1a\x15.proto.MessageCommand(\x010\x01B\x11Z\x0f./;agent_clientb\x06proto3"
 
 var (
 	file_agent_client_proto_rawDescOnce sync.Once
@@ -119,8 +128,8 @@ var file_agent_client_proto_goTypes = []any{
 	(*MessageCommand)(nil), // 0: proto.MessageCommand
 }
 var file_agent_client_proto_depIdxs = []int32{
-	0, // 0: proto.MessageCommandService.StreamMessageCommand:input_type -> proto.MessageCommand
-	0, // 1: proto.MessageCommandService.StreamMessageCommand:output_type -> proto.MessageCommand
+	0, // 0: proto.AgentClientService.StreamMessage:input_type -> proto.MessageCommand
+	0, // 1: proto.AgentClientService.StreamMessage:output_type -> proto.MessageCommand
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

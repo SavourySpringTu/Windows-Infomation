@@ -19,27 +19,27 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessageCommandService_StreamMessageCommand_FullMethodName = "/proto.MessageCommandService/StreamMessageCommand"
+	AgentClientService_StreamMessage_FullMethodName = "/proto.AgentClientService/StreamMessage"
 )
 
-// MessageCommandServiceClient is the client API for MessageCommandService service.
+// AgentClientServiceClient is the client API for AgentClientService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type MessageCommandServiceClient interface {
-	StreamMessageCommand(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MessageCommand, MessageCommand], error)
+type AgentClientServiceClient interface {
+	StreamMessage(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MessageCommand, MessageCommand], error)
 }
 
-type messageCommandServiceClient struct {
+type agentClientServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewMessageCommandServiceClient(cc grpc.ClientConnInterface) MessageCommandServiceClient {
-	return &messageCommandServiceClient{cc}
+func NewAgentClientServiceClient(cc grpc.ClientConnInterface) AgentClientServiceClient {
+	return &agentClientServiceClient{cc}
 }
 
-func (c *messageCommandServiceClient) StreamMessageCommand(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MessageCommand, MessageCommand], error) {
+func (c *agentClientServiceClient) StreamMessage(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MessageCommand, MessageCommand], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &MessageCommandService_ServiceDesc.Streams[0], MessageCommandService_StreamMessageCommand_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &AgentClientService_ServiceDesc.Streams[0], AgentClientService_StreamMessage_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -48,65 +48,65 @@ func (c *messageCommandServiceClient) StreamMessageCommand(ctx context.Context, 
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type MessageCommandService_StreamMessageCommandClient = grpc.BidiStreamingClient[MessageCommand, MessageCommand]
+type AgentClientService_StreamMessageClient = grpc.BidiStreamingClient[MessageCommand, MessageCommand]
 
-// MessageCommandServiceServer is the server API for MessageCommandService service.
-// All implementations must embed UnimplementedMessageCommandServiceServer
+// AgentClientServiceServer is the server API for AgentClientService service.
+// All implementations must embed UnimplementedAgentClientServiceServer
 // for forward compatibility.
-type MessageCommandServiceServer interface {
-	StreamMessageCommand(grpc.BidiStreamingServer[MessageCommand, MessageCommand]) error
-	mustEmbedUnimplementedMessageCommandServiceServer()
+type AgentClientServiceServer interface {
+	StreamMessage(grpc.BidiStreamingServer[MessageCommand, MessageCommand]) error
+	mustEmbedUnimplementedAgentClientServiceServer()
 }
 
-// UnimplementedMessageCommandServiceServer must be embedded to have
+// UnimplementedAgentClientServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedMessageCommandServiceServer struct{}
+type UnimplementedAgentClientServiceServer struct{}
 
-func (UnimplementedMessageCommandServiceServer) StreamMessageCommand(grpc.BidiStreamingServer[MessageCommand, MessageCommand]) error {
-	return status.Errorf(codes.Unimplemented, "method StreamMessageCommand not implemented")
+func (UnimplementedAgentClientServiceServer) StreamMessage(grpc.BidiStreamingServer[MessageCommand, MessageCommand]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamMessage not implemented")
 }
-func (UnimplementedMessageCommandServiceServer) mustEmbedUnimplementedMessageCommandServiceServer() {}
-func (UnimplementedMessageCommandServiceServer) testEmbeddedByValue()                               {}
+func (UnimplementedAgentClientServiceServer) mustEmbedUnimplementedAgentClientServiceServer() {}
+func (UnimplementedAgentClientServiceServer) testEmbeddedByValue()                            {}
 
-// UnsafeMessageCommandServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to MessageCommandServiceServer will
+// UnsafeAgentClientServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AgentClientServiceServer will
 // result in compilation errors.
-type UnsafeMessageCommandServiceServer interface {
-	mustEmbedUnimplementedMessageCommandServiceServer()
+type UnsafeAgentClientServiceServer interface {
+	mustEmbedUnimplementedAgentClientServiceServer()
 }
 
-func RegisterMessageCommandServiceServer(s grpc.ServiceRegistrar, srv MessageCommandServiceServer) {
-	// If the following call pancis, it indicates UnimplementedMessageCommandServiceServer was
+func RegisterAgentClientServiceServer(s grpc.ServiceRegistrar, srv AgentClientServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAgentClientServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&MessageCommandService_ServiceDesc, srv)
+	s.RegisterService(&AgentClientService_ServiceDesc, srv)
 }
 
-func _MessageCommandService_StreamMessageCommand_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(MessageCommandServiceServer).StreamMessageCommand(&grpc.GenericServerStream[MessageCommand, MessageCommand]{ServerStream: stream})
+func _AgentClientService_StreamMessage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(AgentClientServiceServer).StreamMessage(&grpc.GenericServerStream[MessageCommand, MessageCommand]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type MessageCommandService_StreamMessageCommandServer = grpc.BidiStreamingServer[MessageCommand, MessageCommand]
+type AgentClientService_StreamMessageServer = grpc.BidiStreamingServer[MessageCommand, MessageCommand]
 
-// MessageCommandService_ServiceDesc is the grpc.ServiceDesc for MessageCommandService service.
+// AgentClientService_ServiceDesc is the grpc.ServiceDesc for AgentClientService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var MessageCommandService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.MessageCommandService",
-	HandlerType: (*MessageCommandServiceServer)(nil),
+var AgentClientService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.AgentClientService",
+	HandlerType: (*AgentClientServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "StreamMessageCommand",
-			Handler:       _MessageCommandService_StreamMessageCommand_Handler,
+			StreamName:    "StreamMessage",
+			Handler:       _AgentClientService_StreamMessage_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
