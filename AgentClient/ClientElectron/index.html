@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Agent Client</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        #tab-bar {
+            display: flex;
+            padding: 0 10px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab {
+            padding: 12px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 10px 10px 0 0;
+            background-color: transparent;
+            border: none;
+            outline: none;
+            color: #555;
+            font-size: 18px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            background-color: #e9f3ff;
+            color: #0078D4;
+        }
+
+        .tab.active {
+            background-color: #ffffff;
+            border-bottom: 2px solid white;
+            color: #0078D4;
+        }
+
+        .tab i {
+            pointer-events: none;
+        }
+
+        .tab::after {
+            content: attr(data-title);
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            white-space: nowrap;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .tab:hover::after {
+            opacity: 1;
+        }
+
+        #content {
+            background-color: #ffffff;
+            margin: 0 20px 20px 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            min-height: 500px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+<div id="tab-bar">
+    <button class="tab active" data-file="TabAgent.html" data-title="Agent"><i class="fas fa-user-shield"></i></button>
+    <button class="tab" data-file="TabVirusTotal.html" data-title="VirusTotal"><i class="fas fa-shield-virus"></i></button>
+</div>
+
+<div id="content">Loading...</div>
+
+<script>
+    const tabs = document.querySelectorAll('.tab');
+    const contentDiv = document.getElementById('content');
+
+    async function loadTabContent(file) {
+        try {
+            const res = await fetch(file);
+            if (!res.ok) throw new Error(`Failed to load ${file}`);
+            const html = await res.text();
+            contentDiv.innerHTML = html;
+        } catch (err) {
+            contentDiv.innerHTML = `<p style="color:red;">${err.message}</p>`;
+        }
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            loadTabContent(tab.getAttribute('data-file'));
+        });
+    });
+
+    loadTabContent(tabs[0].getAttribute('data-file'));
+</script>
+</body>
+</html>

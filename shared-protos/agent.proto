@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package agent;
+
+option go_package = "./proto/;proto";
+
+service AgentService{
+  rpc StreamMessage(stream CommandMessage) returns (stream CommandMessage);
+}
+
+message CommandMessage {
+  string auth = 1;
+  string id = 2;
+  string type= 3;
+  string parameter= 4;
+  string error = 5;
+  string data = 6;
+}

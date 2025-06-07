@@ -1,0 +1,16 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.example.app
+asarUnpack:
+  - '**/ref-napi/**'
+  - '**/ffi-napi/**'
+  - '**/ref-struct-napi/**'
+  - '**/ref-wchar-napi/**'
+extraFiles:
+  - from: ../AgentServer/main_server_x64.exe
+    to: resources/AgentServer/main_server_x64.exe
+win:
+  target: portable
+files: []
+electronVersion: 20.3.8

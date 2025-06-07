@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Process Information</title>
+    <link rel="stylesheet" href="../css/processes.css" />
+</head>
+<body>
+<main>
+    <h1>Process Information</h1>
+    <div class="controls">
+        <select id="client-select" aria-label="Select Client"></select>
+        <button id="client-btn">Load Client</button>
+        <button id="fetch-btn">Fetch Info</button>
+    </div>
+    <div class="field-row path-input-row">
+        <input id="path" placeholder="e.g., C:\test.txt" />
+    </div>
+    <div id="info-display" role="region" aria-live="polite">
+        <div class="field-row error-row" style="display: none;">
+            <label></label>
+            <input id="error" readonly class="error-message" />
+        </div>
+        <div id="process-container"></div>
+    </div>
+    <div id="error-alert"></div>
+</main>
+</body>
+</html>

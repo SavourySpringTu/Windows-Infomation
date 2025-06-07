@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BIOS Information</title>
+    <link rel="stylesheet" href="../css/bios.css" />
+</head>
+<body>
+<main>
+    <h1>Hardware Information</h1>
+    <div class="controls">
+        <select id="client-select" aria-label="Select Client"></select>
+        <button id="client-btn">Load Client</button>
+        <button id="fetch-btn">Fetch Info</button>
+    </div>
+
+    <div id="info-display" role="region" aria-live="polite">
+        <div class="field-row">
+            <label for="namecpu">Name CPU</label>
+            <input id="namecpu" readonly />
+        </div>
+        <div class="field-row">
+            <label for="ram">RAM</label>
+            <input id="ram" readonly />
+        </div>
+        <div class="field-row">
+            <label for="sizedisk">Disk</label>
+            <input id="sizedisk" readonly />
+        </div>
+        <div class="field-row">
+            <label for="error">Error</label>
+            <input id="error" readonly />
+        </div>
+    </div>
+    <div id="error-alert"></div>
+</main>
+</body>
+</html>

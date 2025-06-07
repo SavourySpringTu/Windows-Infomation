@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BIOS Information</title>
+  <link rel="stylesheet" href="../css/bios.css" />
+</head>
+<body>
+<main>
+  <h1>BIOS Information</h1>
+  <div class="controls">
+    <select id="client-select" aria-label="Select Client"></select>
+    <button id="client-btn">Load Client</button>
+    <button id="fetch-btn">Fetch Info</button>
+  </div>
+
+  <div id="info-display" role="region" aria-live="polite">
+    <div class="field-row">
+      <label for="systemmanufacturer">System Manufacturer</label>
+      <input id="systemmanufacturer" readonly />
+    </div>
+    <div class="field-row">
+      <label for="systemmodel">System Model</label>
+      <input id="systemmodel" readonly />
+    </div>
+    <div class="field-row">
+      <label for="uuid">UUID</label>
+      <input id="uuid" readonly />
+    </div>
+    <div class="field-row">
+      <label for="processor">Processor</label>
+      <input id="processor" readonly />
+    </div>
+    <div class="field-row">
+      <label for="baseboardmanufacturer">Base Board Manufacturer</label>
+      <input id="baseboardmanufacturer" readonly />
+    </div>
+    <div class="field-row">
+      <label for="baseboardserial">Base Board Serial</label>
+      <input id="baseboardserial" readonly />
+    </div>
+    <div class="field-row">
+      <label for="baseboardmodel">Base Board Model</label>
+      <input id="baseboardmodel" readonly />
+    </div>
+    <div class="field-row">
+      <label for="diskdriveserial">Disk Drive Serial</label>
+      <input id="diskdriveserial" readonly />
+    </div>
+  </div>
+  <div id="error-alert"></div>
+</main>
+</body>
+</html>

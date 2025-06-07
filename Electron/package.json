@@ -1,0 +1,55 @@
+{
+  "name": "electron",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "gen:proto": "grpc_tools_node_protoc --proto_path=../shared-protos --js_out=import_style=commonjs,binary:./proto --grpc_out=grpc_js:./proto ../shared-protos/agent.proto"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^20.3.8",
+    "electron-builder": "^26.0.12",
+    "electron-rebuild": "^3.2.9",
+    "grpc-tools": "^1.13.0"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.13.4",
+    "axios": "^1.9.0",
+    "ffi-napi": "^4.0.3",
+    "ffi-rs": "^1.2.12",
+    "google-protobuf": "^3.21.4",
+    "node-gyp": "^9.4.0",
+    "protobufjs": "^7.5.3",
+    "ref-napi": "^3.0.3",
+    "ref-struct-di": "^1.1.1",
+    "ref-wchar-napi": "^1.0.3",
+    "rxjs": "^7.8.2",
+    "yaml": "^2.8.0"
+  },
+  "build": {
+    "appId": "com.example.app",
+    "asarUnpack": [
+      "**/ref-napi/**",
+      "**/ffi-napi/**",
+      "**/ref-struct-napi/**",
+      "**/ref-wchar-napi/**"
+    ],
+    "extraFiles": [
+      {
+        "from": "../AgentServer/main_server_x64.exe",
+        "to": "resources/AgentServer/main_server_x64.exe"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable"
+    }
+  }
+}

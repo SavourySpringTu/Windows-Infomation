@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Programs and Features</title>
+    <link rel="stylesheet" href="../css/apps.css" />
+</head>
+<body>
+<main>
+    <h1>Connections Information</h1>
+    <div class="controls">
+        <select id="client-select" aria-label="Select Client"></select>
+        <button id="client-btn">Load Client</button>
+        <button id="fetch-btn">Fetch Info</button>
+    </div>
+    <div class="table-container">
+        <h2>TCP Connections</h2>
+        <table id="tcp-table">
+            <thead>
+            <tr>
+                <th>PID</th>
+                <th>Local Address</th>
+                <th>Remote Address</th>
+                <th>Local Port</th>
+                <th>Remote Port</th>
+                <th>State</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>UDP Connections</h2>
+        <table id="udp-table">
+            <thead>
+            <tr>
+                <th>PID</th>
+                <th>Local Address</th>
+                <th>Remote Address</th>
+                <th>Local Port</th>
+                <th>Remote Port</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="error-alert"></div>
+    </div>
+</main>
+</body>
+</html>

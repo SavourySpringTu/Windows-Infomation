@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Programs and Features</title>
+    <link rel="stylesheet" href="../css/apps.css" />
+</head>
+<body>
+<main>
+    <h1>DNS Information</h1>
+    <div class="controls">
+        <select id="client-select" aria-label="Select Client"></select>
+        <button id="client-btn">Load Client</button>
+        <button id="fetch-btn">Fetch Info</button>
+    </div>
+
+    <div class="table-container">
+        <table id="table-dns">
+            <thead>
+            <tr>
+                <th>Domain</th>
+                <th>Record</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="error-alert"></div>
+    </div>
+</main>
+</body>
+</html>

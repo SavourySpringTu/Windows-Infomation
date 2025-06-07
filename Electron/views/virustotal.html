@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>System Info Information</title>
+    <link rel="stylesheet" href="../css/apps.css" />
+    <style>
+        #data{
+            background-color: #212B36;
+            width: 700px;
+            height: 550px;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Virus Total</h1>
+    <div class="agent-container">
+        <div class="controls">
+            <select id="client-select" aria-label="Select Client"></select>
+            <button id="client-btn">Load Client</button>
+            <button id="fetch-btn">Analyze File</button>
+        </div>
+
+        <div class="field-row path-input-row">
+            <input id="path" placeholder="e.g., C:\test.txt" />
+        </div>
+
+        <pre id="data">Results will appear here...</pre>
+    </div>
+</main>
+</body>
+</html>
+

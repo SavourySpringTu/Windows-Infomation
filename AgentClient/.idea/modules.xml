@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/GUI.iml" filepath="$PROJECT_DIR$/GUI.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/appsInfo.iml" filepath="$PROJECT_DIR$/.idea/appsInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/connectionsInfo.iml" filepath="$PROJECT_DIR$/.idea/connectionsInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/dnsCachedInfo.iml" filepath="$PROJECT_DIR$/.idea/dnsCachedInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/filesInfo.iml" filepath="$PROJECT_DIR$/.idea/filesInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/hardWareInfo.iml" filepath="$PROJECT_DIR$/.idea/hardWareInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/hashFile.iml" filepath="$PROJECT_DIR$/.idea/hashFile.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/kernelModuleInfo.iml" filepath="$PROJECT_DIR$/.idea/kernelModuleInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/networkInfo.iml" filepath="$PROJECT_DIR$/.idea/networkInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/processesInfo.iml" filepath="$PROJECT_DIR$/.idea/processesInfo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/registry.iml" filepath="$PROJECT_DIR$/.idea/registry.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/sysInfo.iml" filepath="$PROJECT_DIR$/.idea/sysInfo.iml" />
+    </modules>
+  </component>
+</project>

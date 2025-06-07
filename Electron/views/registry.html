@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BIOS Information</title>
+  <link rel="stylesheet" href="../css/apps.css" />
+</head>
+<body>
+<main>
+  <h1>Registry Information</h1>
+  <div class="controls">
+    <select id="client-select" aria-label="Select Client"></select>
+    <button id="client-btn">Load Client</button>
+    <button id="fetch-btn">Fetch Info</button>
+  </div>
+
+  <div class="field-row path-input-row">
+    <input id="path" placeholder="e.g., Computer\HKEY_LOCAL_MACHINE\BCD00000000\Description" />
+  </div>
+  <div class="table-container">
+    <table id ="table-registry">
+      <thead>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div id="error-alert"></div>
+</main>
+</body>
+</html>
